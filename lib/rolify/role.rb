@@ -11,7 +11,7 @@ module Rolify
 
     def add_role(role_name, resource = nil)
       role = self.class.adapter.find_or_create_by(role_name.to_s,
-                                                  (resource.is_a?(Class) ? resource.to_s : resource.class.name if resource),
+                                                  (resource.is_a?(Class) ? resource.to_s : resource.class.base_class_name if resource),
                                                   (resource.id if resource && !resource.is_a?(Class)))
 
       if !roles.include?(role)
@@ -25,23 +25,15 @@ module Rolify
     def has_role?(role_name, resource = nil)
       return has_strict_role?(role_name, resource) if self.class.strict_rolify and resource and resource != :any
 
-      if new_record?
-        role_array = self.roles.detect { |r|
-          r.name.to_s == role_name.to_s &&
-            (r.resource == resource ||
-             resource.nil? ||
-             (resource == :any && r.resource.present?))
-        }
-      else
-        role_array = self.class.adapter.where(self.roles, name: role_name, resource: resource)
-      end
-
-      return false if role_array.nil?
-      role_array != []
+      if resource.blank?
+        self.roles.any?{ |r| r.name == role_name.to_s }.present?
+       else
+        self.roles.any?{ |r| r.name == role_name.to_s && r.resource_type == resource.class.base_class.to_s && r.resource_id == resource.id }.present?
+       end
     end
 
     def has_strict_role?(role_name, resource)
-      self.class.adapter.where_strict(self.roles, name: role_name, resource: resource).any?
+      self.roles.any?{ |r| r.name == role_name.to_s && r.resource_type == resource.class.base_class.to_s && r.resource_id == resource.id }.present?
     end
 
     def has_cached_role?(role_name, resource = nil)
