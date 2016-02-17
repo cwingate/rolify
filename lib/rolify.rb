@@ -6,6 +6,8 @@ require 'rolify/resource'
 require 'rolify/role'
 
 module Rolify
+  RELATION_OPTIONS = [ :before_add, :after_add, :before_remove, :after_remove, :foreign_key, :association_foreign_key, :inverse_of ]
+
   extend Configure
 
   attr_accessor :role_cname, :adapter, :resource_adapter, :role_join_table_name, :role_table_name, :strict_rolify
@@ -25,7 +27,7 @@ module Rolify
 
     rolify_options = { :class_name => options[:role_cname].camelize }
     rolify_options.merge!({ :join_table => self.role_join_table_name }) if Rolify.orm == "active_record"
-    rolify_options.merge!(options.reject{ |k,v| ![ :before_add, :after_add, :before_remove, :after_remove, :inverse_of ].include? k.to_sym })
+    rolify_options.merge!(options.reject{ |k,v| !RELATION_OPTIONS.include? k.to_sym })
 
     has_and_belongs_to_many :roles, rolify_options
 
