@@ -11,7 +11,7 @@ module Rolify
 
     def add_role(role_name, resource = nil)
       role = self.class.adapter.find_or_create_by(role_name.to_s,
-                                                  (resource.is_a?(Class) ? resource.to_s : resource.class.base_class_name if resource),
+                                                  (resource.is_a?(Class) ? resource.to_s : resource.class.base_class.name if resource),
                                                   (resource.id if resource && !resource.is_a?(Class)))
 
       if !roles.include?(role)
@@ -28,12 +28,12 @@ module Rolify
       if resource.blank?
         self.roles.any?{ |r| r.name == role_name.to_s }.present?
        else
-        self.roles.any?{ |r| r.name == role_name.to_s && r.resource_type == resource.class.base_class.to_s && r.resource_id == resource.id }.present?
+        self.roles.any?{ |r| r.name == role_name.to_s && r.resource_type == resource.class.base_class.name && r.resource_id == resource.id }.present?
        end
     end
 
     def has_strict_role?(role_name, resource)
-      self.roles.any?{ |r| r.name == role_name.to_s && r.resource_type == resource.class.base_class.to_s && r.resource_id == resource.id }.present?
+      self.roles.any?{ |r| r.name == role_name.to_s && r.resource_type == resource.class.base_class.name && r.resource_id == resource.id }.present?
     end
 
     def has_cached_role?(role_name, resource = nil)
@@ -59,11 +59,7 @@ module Rolify
     end
 
     def has_any_role?(*args)
-      if new_record?
-        args.any? { |r| self.has_role?(r) }
-      else
-        self.class.adapter.where(self.roles, *args).size > 0
-      end
+      args.any? { |r| self.has_role?(r) }
     end
 
     def only_has_role?(role_name, resource = nil)
